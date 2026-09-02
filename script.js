@@ -1,4 +1,4 @@
-// Загрузка данных
+// Загрузка данных из GitHub
 let voteData = {
     date: new Date().toISOString().split('T')[0],
     leftOption: 'Перс 1',
@@ -7,9 +7,33 @@ let voteData = {
     votes2: 0
 };
 
-// Проверка localStorage
-if (localStorage.getItem('voteData')) {
-    voteData = JSON.parse(localStorage.getItem('voteData'));
+// Флаг, загружены ли данные
+let dataLoaded = false;
+
+// Загрузка данных из data.json на GitHub
+async function loadDataFromGitHub() {
+    try {
+        // Добавляем timestamp чтобы избежать кэширования
+        const response = await fetch('data.json?t=' + new Date().getTime());
+        if (response.ok) {
+            const data = await response.json();
+            voteData = data;
+            dataLoaded = true;
+            console.log('Данные загружены из GitHub:', voteData);
+        }
+    } catch (error) {
+        console.log('Не удалось загрузить из GitHub, используем localStorage:', error);
+        // Если не получилось загрузить из GitHub, пробуем localStorage
+        if (localStorage.getItem('voteData')) {
+            voteData = JSON.parse(localStorage.getItem('voteData'));
+        }
+    }
+    updateDisplay();
+}
+
+// Сохранение в localStorage (для голосования)
+function saveToLocal() {
+    localStorage.setItem('voteData', JSON.stringify(voteData));
 }
 
 // Отображение даты
@@ -22,8 +46,8 @@ document.getElementById('current-date').textContent = new Date().toLocaleDateStr
 
 // Обновление интерфейса
 function updateDisplay() {
-    document.getElementById('left-title').textContent = voteData.leftOption;
-    document.getElementById('right-title').textContent = voteData.rightOption;
+    document.getElementById('left-title').textContent = voteData.leftOption || 'Перс 1';
+    document.getElementById('right-title').textContent = voteData.rightOption || 'Перс 2';
     
     const total = voteData.votes1 + voteData.votes2;
     const percent1 = total > 0 ? Math.round((voteData.votes1 / total) * 100) : 0;
@@ -50,7 +74,8 @@ function vote(option) {
         voteData.votes2++;
     }
     
-    localStorage.setItem('voteData', JSON.stringify(voteData));
+    // Сохраняем локально
+    saveToLocal();
     sessionStorage.setItem('hasVoted', 'true');
     
     updateDisplay();
@@ -59,13 +84,10 @@ function vote(option) {
     alert('✅ Ваш голос учтён!');
 }
 
-// Инициализация
-updateDisplay();
+// Инициализация - загружаем данные из GitHub
+loadDataFromGitHub();
 
-// Автообновление каждые 30 секунд
+// Автообновление каждые 10 секунд (проверяем GitHub)
 setInterval(() => {
-    if (localStorage.getItem('voteData')) {
-        voteData = JSON.parse(localStorage.getItem('voteData'));
-        updateDisplay();
-    }
-}, 30000);
+    loadDataFromGitHub();
+}, 10000);
