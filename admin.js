@@ -1,10 +1,8 @@
-// Конфигурация
 const GITHUB_OWNER = 'egorlehanov600-ux';
 const REPO_NAME = 'Roblox-Game';
 const BRANCH_NAME = 'main';
 const FILE_PATH = 'data.json';
 
-// Загрузка при старте
 window.onload = function() {
     if (localStorage.getItem('voteData')) {
         const data = JSON.parse(localStorage.getItem('voteData'));
@@ -20,7 +18,6 @@ window.onload = function() {
     }
 };
 
-// Показ статуса
 function showStatus(message, isError = false) {
     const statusDiv = document.getElementById('status');
     statusDiv.innerHTML = message;
@@ -44,85 +41,6 @@ function showStatus(message, isError = false) {
     }, 8000);
 }
 
-// Получить SHA файла
-async function getFileSha(token) {
-    try {
-        const response = await fetch(
-            `https://api.github.com/repos/${GITHUB_OWNER}/${REPO_NAME}/contents/${FILE_PATH}?ref=${BRANCH_NAME}`,
-            {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Accept': 'application/vnd.github.v3+json'
-                }
-            }
-        );
-        
-        if (response.ok) {
-            const data = await response.json();
-            return data.sha;
-        }
-        return null;
-    } catch (error) {
-        console.error('Ошибка получения SHA:', error);
-        return null;
-    }
-}
-
-// Загрузить на GitHub
-async function pushToGitHub(content, token) {
-    showStatus('⏳ Загрузка на GitHub...');
-    
-    try {
-        const sha = await getFileSha(token);
-        
-        const requestData = {
-            message: ` Обновление голосования от ${new Date().toLocaleDateString('ru-RU')}`,
-            content: btoa(unescape(encodeURIComponent(JSON.stringify(content, null, 2)))),
-            branch: BRANCH_NAME
-        };
-        
-        if (sha) {
-            requestData.sha = sha;
-        }
-        
-        const response = await fetch(
-            `https://api.github.com/repos/${GITHUB_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`,
-            {
-                method: 'PUT',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Accept': 'application/vnd.github.v3+json',
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(requestData)
-            }
-        );
-        
-        if (response.ok) {
-            const result = await response.json();
-            showStatus(`✅ Загружено на GitHub! <a href="${result.commit.html_url}" target="_blank" style="color: #fff; text-decoration: underline;">Посмотреть</a>`);
-            
-            localStorage.setItem('githubToken', token);
-            
-            setTimeout(() => {
-                if (confirm('✅ Готово! Открыть сайт?')) {
-                    window.open(`https://${GITHUB_OWNER}.github.io/${REPO_NAME}/`, '_blank');
-                }
-            }, 1500);
-            
-            return true;
-        } else {
-            const error = await response.json();
-            throw new Error(error.message || 'Ошибка');
-        }
-    } catch (error) {
-        console.error('GitHub API error:', error);
-        showStatus(`❌ Ошибка: ${error.message}`, true);
-        return false;
-    }
-}
-
-// Сохранить и загрузить
 async function saveAndPushToGitHub() {
     const password = document.getElementById('admin-password').value;
     const token = document.getElementById('github-token').value.trim();
@@ -133,14 +51,11 @@ async function saveAndPushToGitHub() {
     }
     
     if (!token) {
-        alert('️ Введи GitHub token!');
+        alert('⚠️ Введи GitHub token!');
         return;
     }
     
-    if (!token.startsWith('ghp_')) {
-        alert('⚠️ Токен должен начинаться с ghp_');
-        return;
-    }
+    showStatus('⏳ Получаю актуальный SHA файла...');
     
     const newData = {
         date: document.getElementById('vote-date').value,
@@ -152,16 +67,73 @@ async function saveAndPushToGitHub() {
     
     localStorage.setItem('voteData', JSON.stringify(newData));
     
-    const success = await pushToGitHub(newData, token);
-    
-    if (success) {
-        setTimeout(() => {
-            location.reload();
-        }, 3000);
+    try {
+        // Шаг 1: Получаем актуальный SHA
+        const getResponse = await fetch(
+            `https://api.github.com/repos/${GITHUB_OWNER}/${REPO_NAME}/contents/${FILE_PATH}?ref=${BRANCH_NAME}`,
+            {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/vnd.github.v3+json'
+                }
+            }
+        );
+        
+        let sha = null;
+        if (getResponse.ok) {
+            const fileData = await getResponse.json();
+            sha = fileData.sha;
+        }
+        
+        showStatus('⏳ Загружаю файл на GitHub...');
+        
+        // Шаг 2: Сразу отправляем обновление с актуальным SHA
+        const content = btoa(unescape(encodeURIComponent(JSON.stringify(newData, null, 2))));
+        
+        const putData = {
+            message: `📊 Обновление голосования от ${new Date().toLocaleDateString('ru-RU')}`,
+            content: content,
+            branch: BRANCH_NAME
+        };
+        
+        if (sha) {
+            putData.sha = sha;
+        }
+        
+        const putResponse = await fetch(
+            `https://api.github.com/repos/${GITHUB_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`,
+            {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/vnd.github.v3+json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(putData)
+            }
+        );
+        
+        if (putResponse.ok) {
+            const result = await putResponse.json();
+            showStatus(`✅ Загружено! <a href="${result.commit.html_url}" target="_blank" style="color: #fff; text-decoration: underline;">Посмотреть commit</a>`);
+            
+            localStorage.setItem('githubToken', token);
+            
+            setTimeout(() => {
+                if (confirm('✅ Готово! Открыть сайт?')) {
+                    window.open(`https://${GITHUB_OWNER}.github.io/${REPO_NAME}/`, '_blank');
+                }
+            }, 1500);
+        } else {
+            const error = await putResponse.json();
+            showStatus(`❌ Ошибка: ${error.message}`, true);
+        }
+    } catch (error) {
+        console.error('Ошибка:', error);
+        showStatus(` Ошибка: ${error.message}`, true);
     }
 }
 
-// Сохранить локально
 function saveSettings() {
     const password = document.getElementById('admin-password').value;
     
@@ -182,7 +154,6 @@ function saveSettings() {
     alert('✅ Сохранено локально!');
 }
 
-// Сброс голосов
 function resetVotes() {
     if (confirm('⚠️ Сбросить все голоса?')) {
         if (localStorage.getItem('voteData')) {
@@ -195,7 +166,6 @@ function resetVotes() {
     }
 }
 
-// Экспорт
 function exportData() {
     const dataStr = localStorage.getItem('voteData');
     const dataBlob = new Blob([dataStr], {type: 'application/json'});
