@@ -41,6 +41,53 @@ function showStatus(message, isError = false) {
     }, 8000);
 }
 
+async function getLatestSha(token) {
+    const response = await fetch(
+        `https://api.github.com/repos/${GITHUB_OWNER}/${REPO_NAME}/contents/${FILE_PATH}?ref=${BRANCH_NAME}&t=${Date.now()}`,
+        {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/vnd.github.v3+json',
+                'Cache-Control': 'no-cache'
+            }
+        }
+    );
+    
+    if (response.ok) {
+        const data = await response.json();
+        return data.sha;
+    }
+    return null;
+}
+
+async function tryUpload(token, sha, content) {
+    const putData = {
+        message: `📊 Обновление от ${new Date().toLocaleString('ru-RU')}`,
+        content: content,
+        branch: BRANCH_NAME
+    };
+    
+    if (sha) {
+        putData.sha = sha;
+    }
+    
+    const response = await fetch(
+        `https://api.github.com/repos/${GITHUB_OWNER}/${REPO_NAME}/contents/${FILE_PATH}?t=${Date.now()}`,
+        {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/vnd.github.v3+json',
+                'Content-Type': 'application/json',
+                'Cache-Control': 'no-cache'
+            },
+            body: JSON.stringify(putData)
+        }
+    );
+    
+    return response;
+}
+
 async function saveAndPushToGitHub() {
     const password = document.getElementById('admin-password').value;
     const token = document.getElementById('github-token').value.trim();
@@ -55,8 +102,6 @@ async function saveAndPushToGitHub() {
         return;
     }
     
-    showStatus('⏳ Получаю актуальный SHA файла...');
-    
     const newData = {
         date: document.getElementById('vote-date').value,
         leftOption: document.getElementById('left-option').value,
@@ -66,58 +111,34 @@ async function saveAndPushToGitHub() {
     };
     
     localStorage.setItem('voteData', JSON.stringify(newData));
+    localStorage.setItem('githubToken', token);
+    
+    const content = btoa(unescape(encodeURIComponent(JSON.stringify(newData, null, 2))));
+    
+    // Попытка 1: получаем SHA и сразу отправляем
+    showStatus(' Загрузка на GitHub (попытка 1)...');
     
     try {
-        // Шаг 1: Получаем актуальный SHA
-        const getResponse = await fetch(
-            `https://api.github.com/repos/${GITHUB_OWNER}/${REPO_NAME}/contents/${FILE_PATH}?ref=${BRANCH_NAME}`,
-            {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Accept': 'application/vnd.github.v3+json'
-                }
-            }
-        );
+        let sha = await getLatestSha(token);
+        let response = await tryUpload(token, sha, content);
         
-        let sha = null;
-        if (getResponse.ok) {
-            const fileData = await getResponse.json();
-            sha = fileData.sha;
-        }
-        
-        showStatus('⏳ Загружаю файл на GitHub...');
-        
-        // Шаг 2: Сразу отправляем обновление с актуальным SHA
-        const content = btoa(unescape(encodeURIComponent(JSON.stringify(newData, null, 2))));
-        
-        const putData = {
-            message: `📊 Обновление голосования от ${new Date().toLocaleDateString('ru-RU')}`,
-            content: content,
-            branch: BRANCH_NAME
-        };
-        
-        if (sha) {
-            putData.sha = sha;
-        }
-        
-        const putResponse = await fetch(
-            `https://api.github.com/repos/${GITHUB_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`,
-            {
-                method: 'PUT',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Accept': 'application/vnd.github.v3+json',
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(putData)
-            }
-        );
-        
-        if (putResponse.ok) {
-            const result = await putResponse.json();
-            showStatus(`✅ Загружено! <a href="${result.commit.html_url}" target="_blank" style="color: #fff; text-decoration: underline;">Посмотреть commit</a>`);
+        // Если SHA не совпал — пробуем ещё раз с новым SHA
+        if (!response.ok) {
+            const error = await response.json();
             
-            localStorage.setItem('githubToken', token);
+            if (error.message && error.message.includes('does not match')) {
+                showStatus('⏳ SHA устарел, пробую ещё раз (попытка 2)...');
+                
+                // Ждём 1 секунду и получаем свежий SHA
+                await new Promise(r => setTimeout(r, 1000));
+                sha = await getLatestSha(token);
+                response = await tryUpload(token, sha, content);
+            }
+        }
+        
+        if (response.ok) {
+            const result = await response.json();
+            showStatus(`✅ Загружено! <a href="${result.commit.html_url}" target="_blank" style="color: #fff; text-decoration: underline;">Посмотреть</a>`);
             
             setTimeout(() => {
                 if (confirm('✅ Готово! Открыть сайт?')) {
@@ -125,12 +146,12 @@ async function saveAndPushToGitHub() {
                 }
             }, 1500);
         } else {
-            const error = await putResponse.json();
+            const error = await response.json();
             showStatus(`❌ Ошибка: ${error.message}`, true);
         }
     } catch (error) {
         console.error('Ошибка:', error);
-        showStatus(` Ошибка: ${error.message}`, true);
+        showStatus(`❌ Ошибка: ${error.message}`, true);
     }
 }
 
