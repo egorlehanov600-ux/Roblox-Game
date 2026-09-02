@@ -8,7 +8,7 @@
 </head>
 <body>
     <div class="wood-header">
-        <h1>️ Админ-панель</h1>
+        <h1>🔐 Админ-панель</h1>
     </div>
 
     <div class="admin-container">
@@ -34,14 +34,24 @@
             <input type="password" id="admin-password" placeholder="Введите пароль">
         </div>
 
-        <button class="save-btn" onclick="saveSettings()"> Сохранить настройки</button>
-        <button class="reset-btn" onclick="resetVotes()"> Сбросить голоса</button>
+        <div class="form-group">
+            <label>🔐 GitHub Token:</label>
+            <input type="password" id="github-token" placeholder="ghp_...">
+            <small style="color: #aaa; display: block; margin-top: 5px;">
+                Токен сохранится только в твоём браузере
+            </small>
+        </div>
+
+        <button class="save-btn" onclick="saveSettings()">💾 Сохранить локально</button>
+        <button class="auto-save-btn" onclick="saveAndPushToGitHub()"> Загрузить на GitHub</button>
+        <button class="reset-btn" onclick="resetVotes()">🔄 Сбросить голоса</button>
         
         <div class="export-section">
-            <h3>📤 Экспорт для GitHub:</h3>
+            <h3>📤 Или вручную:</h3>
             <button onclick="exportData()">Скачать data.json</button>
-            <p class="hint">Загрузите этот файл в репозиторий для обновления данных</p>
         </div>
+
+        <div id="status" class="status-message"></div>
     </div>
 
     <script src="admin.js"></script>
