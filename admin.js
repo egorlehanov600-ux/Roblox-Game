@@ -19,8 +19,24 @@ window.onload = function() {
         : 0;
     document.getElementById('day-number').value = maxDay + 1;
     
+    updateJSONDisplay();
     console.log('Админка загружена!');
 };
+
+function updateJSONDisplay() {
+    const jsonDisplay = document.getElementById('json-display');
+    jsonDisplay.textContent = JSON.stringify(tournamentData, null, 2);
+}
+
+function copyJSON() {
+    const jsonText = JSON.stringify(tournamentData, null, 2);
+    navigator.clipboard.writeText(jsonText).then(() => {
+        alert('✅ JSON скопирован! Теперь вставь его в data.json на GitHub');
+    }).catch(err => {
+        console.error('Ошибка копирования:', err);
+        alert('❌ Не удалось скопировать. Выдели текст вручную.');
+    });
+}
 
 function addDay() {
     const password = document.getElementById('admin-password').value;
@@ -61,6 +77,7 @@ function addDay() {
     }
     
     localStorage.setItem('tournamentData', JSON.stringify(tournamentData));
+    updateJSONDisplay();
     alert('✅ День ' + dayNumber + ' добавлен!');
     
     document.getElementById('left-option').value = '';
@@ -95,6 +112,7 @@ function finishDay() {
     day.status = 'finished';
     
     localStorage.setItem('tournamentData', JSON.stringify(tournamentData));
+    updateJSONDisplay();
     alert('🏁 День ' + dayNumber + ' завершён!');
 }
 
@@ -167,7 +185,7 @@ async function uploadToGitHub() {
             localStorage.setItem('githubToken', token);
         } else {
             const error = await putResponse.json();
-            statusDiv.innerHTML = '❌ Ошибка: ' + error.message;
+            statusDiv.innerHTML = ' Ошибка: ' + error.message;
             statusDiv.style.background = '#f5576c';
         }
     } catch (error) {
