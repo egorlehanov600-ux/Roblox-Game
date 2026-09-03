@@ -3,39 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ежедневный Выбор</title>
+    <title>Турнир Дней</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="wood-header">
-        <h1> Выбор Дня</h1>
+        <h1> Турнир Дней</h1>
         <p id="current-date"></p>
     </div>
 
-    <div class="container">
-        <div class="voting-box">
-            <div class="option" id="option1" onclick="vote(1)">
-                <h2 id="left-title">Загрузка...</h2>
-                <div class="progress-bar">
-                    <div class="progress" id="progress1" style="width: 0%"></div>
-                </div>
-                <p class="percentage" id="percent1">0%</p>
-            </div>
-
-            <div class="divider">VS</div>
-
-            <div class="option" id="option2" onclick="vote(2)">
-                <h2 id="right-title">Загрузка...</h2>
-                <div class="progress-bar">
-                    <div class="progress" id="progress2" style="width: 0%"></div>
-                </div>
-                <p class="percentage" id="percent2">0%</p>
-            </div>
-        </div>
-
-        <div class="stats">
-            <p>Всего голосов: <span id="total-votes">0</span></p>
-        </div>
+    <div class="tournament-container" id="tournament">
+        <!-- Дни будут добавлены через JS -->
     </div>
 
     <script src="script.js"></script>
