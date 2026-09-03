@@ -4,28 +4,40 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Админ-панель</title>
-    <link rel="stylesheet" href="style.css">
     <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #fff;
+        }
+        .wood-header {
+            background: linear-gradient(90deg, #8B4513, #A0522D, #CD853F, #DEB887, #CD853F, #A0522D);
+            padding: 30px;
+            text-align: center;
+            border-bottom: 4px solid #654321;
+        }
+        .wood-header h1 {
+            color: #FFF8DC;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+            font-size: 2.5em;
+        }
         .admin-container {
             max-width: 700px;
             margin: 40px auto;
             padding: 30px;
             background: rgba(255,255,255,0.1);
             border-radius: 15px;
-            backdrop-filter: blur(10px);
         }
-
-        .form-group {
-            margin-bottom: 25px;
-        }
-
+        h2 { color: #DEB887; margin-bottom: 20px; }
+        .form-group { margin-bottom: 25px; }
         .form-group label {
             display: block;
             margin-bottom: 10px;
             font-size: 1.2em;
             color: #DEB887;
         }
-
         .form-group input {
             width: 100%;
             padding: 12px;
@@ -35,20 +47,17 @@
             color: #fff;
             font-size: 1em;
         }
-
         .columns-setup {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 20px;
             margin-bottom: 25px;
         }
-
         .column-input label {
             display: block;
             margin-bottom: 10px;
             color: #DEB887;
         }
-
         .column-input input {
             width: 100%;
             padding: 12px;
@@ -57,7 +66,6 @@
             background: rgba(0,0,0,0.3);
             color: #fff;
         }
-
         button {
             width: 100%;
             padding: 15px;
@@ -66,39 +74,18 @@
             border-radius: 8px;
             font-size: 1.2em;
             cursor: pointer;
-            transition: all 0.3s;
             color: white;
         }
-
-        .save-btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-
-        .auto-save-btn {
-            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-        }
-
-        .reset-btn {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-        }
-
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-        }
-
+        .auto-save-btn { background: linear-gradient(135deg, #11998e, #38ef7d); }
+        .reset-btn { background: linear-gradient(135deg, #f093fb, #f5576c); }
+        .save-btn { background: linear-gradient(135deg, #667eea, #764ba2); }
+        button:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
         .status-message {
             display: none;
             padding: 15px;
             border-radius: 8px;
             margin-top: 20px;
             text-align: center;
-            font-size: 1.1em;
-        }
-
-        h2 {
-            margin-bottom: 20px;
-            color: #DEB887;
         }
     </style>
 </head>
@@ -120,7 +107,6 @@
                 <label>📝 Левый круг:</label>
                 <input type="text" id="left-option" placeholder="Название">
             </div>
-
             <div class="column-input">
                 <label>📝 Правый круг:</label>
                 <input type="text" id="right-option" placeholder="Название">
@@ -128,21 +114,19 @@
         </div>
 
         <div class="form-group">
-            <label> Пароль администратора:</label>
+            <label>🔑 Пароль администратора:</label>
             <input type="password" id="admin-password" placeholder="Введите пароль">
         </div>
 
         <div class="form-group">
-            <label>🔐 GitHub Token:</label>
+            <label> GitHub Token:</label>
             <input type="password" id="github-token" placeholder="ghp_...">
-            <small style="color: #aaa; display: block; margin-top: 5px;">
-                Токен сохранится только в твоём браузере
-            </small>
+            <small style="color: #aaa; display: block; margin-top: 5px;">Токен сохранится только в твоём браузере</small>
         </div>
 
         <button class="auto-save-btn" onclick="addDay()">➕ Добавить день</button>
         <button class="reset-btn" onclick="finishDay()">🏁 Завершить день</button>
-        <button class="save-btn" onclick="uploadToGitHub()">🚀 Загрузить на GitHub</button>
+        <button class="save-btn" onclick="uploadToGitHub()"> Загрузить на GitHub</button>
         
         <div id="status" class="status-message"></div>
     </div>
