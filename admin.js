@@ -20,18 +20,30 @@ window.onload = function() {
     document.getElementById('day-number').value = maxDay + 1;
     
     updateJSONDisplay();
-    console.log('Админка загружена!');
+    console.log('Админка загружена! Дней:', tournamentData.days.length);
+    
+    // Автоматическое обновление JSON при изменении полей
+    document.getElementById('day-number').addEventListener('input', updateJSONDisplay);
+    document.getElementById('left-option').addEventListener('input', updateJSONDisplay);
+    document.getElementById('right-option').addEventListener('input', updateJSONDisplay);
 };
 
 function updateJSONDisplay() {
     const jsonDisplay = document.getElementById('json-display');
-    jsonDisplay.textContent = JSON.stringify(tournamentData, null, 2);
+    if (jsonDisplay) {
+        jsonDisplay.textContent = JSON.stringify(tournamentData, null, 2);
+    }
 }
 
 function copyJSON() {
     const jsonText = JSON.stringify(tournamentData, null, 2);
     navigator.clipboard.writeText(jsonText).then(() => {
-        alert('✅ JSON скопирован! Теперь вставь его в data.json на GitHub');
+        const btn = document.querySelector('.copy-btn');
+        const originalText = btn.textContent;
+        btn.textContent = '✅ Скопировано!';
+        setTimeout(() => {
+            btn.textContent = originalText;
+        }, 2000);
     }).catch(err => {
         console.error('Ошибка копирования:', err);
         alert('❌ Не удалось скопировать. Выдели текст вручную.');
@@ -51,7 +63,7 @@ function addDay() {
     const rightOption = document.getElementById('right-option').value.trim();
     
     if (!dayNumber || !leftOption || !rightOption) {
-        alert('⚠️ Заполни все поля!');
+        alert('️ Заполни все поля!');
         return;
     }
     
@@ -64,6 +76,7 @@ function addDay() {
         existingDay.winner = null;
         existingDay.votes1 = 0;
         existingDay.votes2 = 0;
+        alert('✅ День ' + dayNumber + ' обновлён!');
     } else {
         tournamentData.days.push({
             day: dayNumber,
@@ -74,11 +87,11 @@ function addDay() {
             status: 'active',
             winner: null
         });
+        alert('✅ День ' + dayNumber + ' добавлен!');
     }
     
     localStorage.setItem('tournamentData', JSON.stringify(tournamentData));
     updateJSONDisplay();
-    alert('✅ День ' + dayNumber + ' добавлен!');
     
     document.getElementById('left-option').value = '';
     document.getElementById('right-option').value = '';
@@ -97,7 +110,7 @@ function finishDay() {
     const day = tournamentData.days.find(d => d.day === dayNumber);
     
     if (!day) {
-        alert('⚠️ День не найден!');
+        alert('⚠️ День не найден! Сначала добавь день.');
         return;
     }
     
@@ -113,7 +126,7 @@ function finishDay() {
     
     localStorage.setItem('tournamentData', JSON.stringify(tournamentData));
     updateJSONDisplay();
-    alert('🏁 День ' + dayNumber + ' завершён!');
+    alert('🏁 День ' + dayNumber + ' завершён! Победитель: ' + (day.winner === 'draw' ? 'Ничья' : day.winner === 'left' ? day.leftOption : day.rightOption));
 }
 
 async function uploadToGitHub() {
@@ -180,12 +193,12 @@ async function uploadToGitHub() {
         
         if (putResponse.ok) {
             const result = await putResponse.json();
-            statusDiv.innerHTML = '✅ Загружено!';
+            statusDiv.innerHTML = '✅ Загружено на GitHub!';
             statusDiv.style.background = '#28a745';
             localStorage.setItem('githubToken', token);
         } else {
             const error = await putResponse.json();
-            statusDiv.innerHTML = ' Ошибка: ' + error.message;
+            statusDiv.innerHTML = '❌ Ошибка: ' + error.message;
             statusDiv.style.background = '#f5576c';
         }
     } catch (error) {
