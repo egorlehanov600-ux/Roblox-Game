@@ -1,42 +1,108 @@
-// Загрузка данных из GitHub
-let voteData = {
-    date: new Date().toISOString().split('T')[0],
-    leftOption: 'Перс 1',
-    rightOption: 'Перс 2',
-    votes1: 0,
-    votes2: 0
+// Загрузка данных
+let tournamentData = {
+    days: []
 };
 
-// Флаг, загружены ли данные
-let dataLoaded = false;
-
-// Загрузка данных из data.json на GitHub
+// Загрузка из GitHub
 async function loadDataFromGitHub() {
     try {
-        // Добавляем timestamp чтобы избежать кэширования
         const response = await fetch('data.json?t=' + new Date().getTime());
         if (response.ok) {
             const data = await response.json();
-            voteData = data;
-            dataLoaded = true;
-            console.log('Данные загружены из GitHub:', voteData);
+            tournamentData = data;
+            console.log('Данные загружены:', tournamentData);
         }
     } catch (error) {
-        console.log('Не удалось загрузить из GitHub, используем localStorage:', error);
-        // Если не получилось загрузить из GitHub, пробуем localStorage
-        if (localStorage.getItem('voteData')) {
-            voteData = JSON.parse(localStorage.getItem('voteData'));
+        console.log('Не удалось загрузить из GitHub:', error);
+        if (localStorage.getItem('tournamentData')) {
+            tournamentData = JSON.parse(localStorage.getItem('tournamentData'));
         }
     }
-    updateDisplay();
+    renderTournament();
 }
 
-// Сохранение в localStorage (для голосования)
-function saveToLocal() {
-    localStorage.setItem('voteData', JSON.stringify(voteData));
+// Отрисовка турнира
+function renderTournament() {
+    const container = document.getElementById('tournament');
+    container.innerHTML = '';
+    
+    // Сортируем дни: день 1 внизу, день N вверху
+    const sortedDays = [...tournamentData.days].sort((a, b) => b.day - a.day);
+    
+    sortedDays.forEach(dayData => {
+        const row = document.createElement('div');
+        row.className = 'day-row';
+        
+        const totalVotes = dayData.votes1 + dayData.votes2;
+        const percent1 = totalVotes > 0 ? Math.round((dayData.votes1 / totalVotes) * 100) : 0;
+        const percent2 = totalVotes > 0 ? Math.round((dayData.votes2 / totalVotes) * 100) : 0;
+        
+        // Определяем классы для кругов
+        let leftClass = 'circle';
+        let rightClass = 'circle';
+        
+        if (dayData.status === 'finished') {
+            if (dayData.winner === 'left') {
+                leftClass += ' winner';
+                rightClass += ' loser';
+            } else if (dayData.winner === 'right') {
+                rightClass += ' winner';
+                leftClass += ' loser';
+            }
+        }
+        
+        row.innerHTML = `
+            <div class="${leftClass}" onclick="vote(${dayData.day}, 1)">
+                ${dayData.leftOption}
+                <div class="vote-count">${percent1}% (${dayData.votes1})</div>
+            </div>
+            
+            <div class="day-box">
+                День ${dayData.day}
+                <div class="arrow arrow-left"></div>
+                <div class="arrow arrow-right"></div>
+            </div>
+            
+            <div class="${rightClass}" onclick="vote(${dayData.day}, 2)">
+                ${dayData.rightOption}
+                <div class="vote-count">${percent2}% (${dayData.votes2})</div>
+            </div>
+        `;
+        
+        container.appendChild(row);
+    });
 }
 
-// Отображение даты
+// Голосование
+function vote(dayNumber, option) {
+    const day = tournamentData.days.find(d => d.day === dayNumber);
+    
+    if (!day || day.status === 'finished') {
+        alert('Этот день уже завершён!');
+        return;
+    }
+    
+    // Проверка, голосовал ли уже
+    const votedKey = `voted_day_${dayNumber}`;
+    if (sessionStorage.getItem(votedKey)) {
+        alert('Ты уже проголосовал в этот день!');
+        return;
+    }
+    
+    if (option === 1) {
+        day.votes1++;
+    } else {
+        day.votes2++;
+    }
+    
+    sessionStorage.setItem(votedKey, 'true');
+    localStorage.setItem('tournamentData', JSON.stringify(tournamentData));
+    
+    renderTournament();
+    alert('✅ Голос учтён!');
+}
+
+// Инициализация
 document.getElementById('current-date').textContent = new Date().toLocaleDateString('ru-RU', {
     weekday: 'long',
     year: 'numeric',
@@ -44,50 +110,9 @@ document.getElementById('current-date').textContent = new Date().toLocaleDateStr
     day: 'numeric'
 });
 
-// Обновление интерфейса
-function updateDisplay() {
-    document.getElementById('left-title').textContent = voteData.leftOption || 'Перс 1';
-    document.getElementById('right-title').textContent = voteData.rightOption || 'Перс 2';
-    
-    const total = voteData.votes1 + voteData.votes2;
-    const percent1 = total > 0 ? Math.round((voteData.votes1 / total) * 100) : 0;
-    const percent2 = total > 0 ? Math.round((voteData.votes2 / total) * 100) : 0;
-    
-    document.getElementById('progress1').style.width = percent1 + '%';
-    document.getElementById('progress2').style.width = percent2 + '%';
-    document.getElementById('percent1').textContent = percent1 + '%';
-    document.getElementById('percent2').textContent = percent2 + '%';
-    document.getElementById('total-votes').textContent = total;
-}
-
-// Голосование
-function vote(option) {
-    // Проверка, голосовал ли уже пользователь
-    if (sessionStorage.getItem('hasVoted')) {
-        alert('Вы уже проголосовали сегодня!');
-        return;
-    }
-    
-    if (option === 1) {
-        voteData.votes1++;
-    } else {
-        voteData.votes2++;
-    }
-    
-    // Сохраняем локально
-    saveToLocal();
-    sessionStorage.setItem('hasVoted', 'true');
-    
-    updateDisplay();
-    
-    // Анимация
-    alert('✅ Ваш голос учтён!');
-}
-
-// Инициализация - загружаем данные из GitHub
 loadDataFromGitHub();
 
-// Автообновление каждые 10 секунд (проверяем GitHub)
+// Автообновление
 setInterval(() => {
     loadDataFromGitHub();
 }, 10000);
