@@ -1,7 +1,31 @@
 {
-  "date": "2026-09-02",
-  "leftOption": "тестик1",
-  "rightOption": "тестик21",
-  "votes1": 0,
-  "votes2": 0
+  "days": [
+    {
+      "day": 1,
+      "leftOption": "димге",
+      "rightOption": "некит",
+      "votes1": 10,
+      "votes2": 5,
+      "status": "finished",
+      "winner": "left"
+    },
+    {
+      "day": 2,
+      "leftOption": "димге",
+      "rightOption": "некит",
+      "votes1": 8,
+      "votes2": 12,
+      "status": "finished",
+      "winner": "right"
+    },
+    {
+      "day": 3,
+      "leftOption": "димге",
+      "rightOption": "некит",
+      "votes1": 0,
+      "votes2": 0,
+      "status": "active",
+      "winner": null
+    }
+  ]
 }
