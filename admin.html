@@ -23,12 +23,27 @@
             text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
             font-size: 2.5em;
         }
-        .admin-container {
-            max-width: 700px;
+        .main-container {
+            display: flex;
+            gap: 30px;
+            max-width: 1400px;
             margin: 40px auto;
+            padding: 0 20px;
+        }
+        .form-container {
+            flex: 1;
             padding: 30px;
             background: rgba(255,255,255,0.1);
             border-radius: 15px;
+        }
+        .json-panel {
+            flex: 1;
+            padding: 30px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            position: sticky;
+            top: 20px;
+            height: fit-content;
         }
         h2 { color: #DEB887; margin-bottom: 20px; }
         .form-group { margin-bottom: 25px; }
@@ -79,6 +94,11 @@
         .auto-save-btn { background: linear-gradient(135deg, #11998e, #38ef7d); }
         .reset-btn { background: linear-gradient(135deg, #f093fb, #f5576c); }
         .save-btn { background: linear-gradient(135deg, #667eea, #764ba2); }
+        .copy-btn { 
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            color: #000;
+            font-weight: bold;
+        }
         button:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
         .status-message {
             display: none;
@@ -87,6 +107,33 @@
             margin-top: 20px;
             text-align: center;
         }
+        .json-display {
+            background: rgba(0,0,0,0.5);
+            border: 2px solid #8B4513;
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            color: #90EE90;
+            max-height: 600px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .json-label {
+            color: #DEB887;
+            font-size: 1.2em;
+            margin-bottom: 15px;
+            display: block;
+        }
+        @media (max-width: 900px) {
+            .main-container {
+                flex-direction: column;
+            }
+            .json-panel {
+                position: static;
+            }
+        }
     </style>
 </head>
 <body>
@@ -94,41 +141,51 @@
         <h1>🔐 Админ-панель</h1>
     </div>
 
-    <div class="admin-container">
-        <h2>Добавить новый день</h2>
-        
-        <div class="form-group">
-            <label> Номер дня:</label>
-            <input type="number" id="day-number" placeholder="1" min="1">
-        </div>
-
-        <div class="columns-setup">
-            <div class="column-input">
-                <label>📝 Левый круг:</label>
-                <input type="text" id="left-option" placeholder="Название">
+    <div class="main-container">
+        <div class="form-container">
+            <h2>Добавить новый день</h2>
+            
+            <div class="form-group">
+                <label>📅 Номер дня:</label>
+                <input type="number" id="day-number" placeholder="1" min="1">
             </div>
-            <div class="column-input">
-                <label>📝 Правый круг:</label>
-                <input type="text" id="right-option" placeholder="Название">
+
+            <div class="columns-setup">
+                <div class="column-input">
+                    <label> Левый круг:</label>
+                    <input type="text" id="left-option" placeholder="Название">
+                </div>
+                <div class="column-input">
+                    <label>📝 Правый круг:</label>
+                    <input type="text" id="right-option" placeholder="Название">
+                </div>
             </div>
+
+            <div class="form-group">
+                <label> Пароль администратора:</label>
+                <input type="password" id="admin-password" placeholder="Введите пароль">
+            </div>
+
+            <div class="form-group">
+                <label>🔐 GitHub Token:</label>
+                <input type="password" id="github-token" placeholder="ghp_...">
+                <small style="color: #aaa; display: block; margin-top: 5px;">Токен сохранится только в твоём браузере</small>
+            </div>
+
+            <button class="auto-save-btn" onclick="addDay()">➕ Добавить день</button>
+            <button class="reset-btn" onclick="finishDay()">🏁 Завершить день</button>
+            <button class="save-btn" onclick="uploadToGitHub()">🚀 Загрузить на GitHub</button>
+            
+            <div id="status" class="status-message"></div>
         </div>
 
-        <div class="form-group">
-            <label>🔑 Пароль администратора:</label>
-            <input type="password" id="admin-password" placeholder="Введите пароль">
+        <div class="json-panel">
+            <span class="json-label">📄 JSON для data.json:</span>
+            <div class="json-display" id="json-display">{
+  "days": []
+}</div>
+            <button class="copy-btn" onclick="copyJSON()">📋 Копировать JSON</button>
         </div>
-
-        <div class="form-group">
-            <label> GitHub Token:</label>
-            <input type="password" id="github-token" placeholder="ghp_...">
-            <small style="color: #aaa; display: block; margin-top: 5px;">Токен сохранится только в твоём браузере</small>
-        </div>
-
-        <button class="auto-save-btn" onclick="addDay()">➕ Добавить день</button>
-        <button class="reset-btn" onclick="finishDay()">🏁 Завершить день</button>
-        <button class="save-btn" onclick="uploadToGitHub()"> Загрузить на GitHub</button>
-        
-        <div id="status" class="status-message"></div>
     </div>
 
     <script src="admin.js"></script>
