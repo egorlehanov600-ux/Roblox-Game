@@ -12,25 +12,27 @@
     </div>
 
     <div class="admin-container">
+        <h2 style="margin-bottom: 20px; color: #DEB887;">Добавить новый день</h2>
+        
         <div class="form-group">
-            <label>📅 Дата голосования:</label>
-            <input type="date" id="vote-date">
+            <label> Номер дня:</label>
+            <input type="number" id="day-number" placeholder="1" min="1">
         </div>
 
         <div class="columns-setup">
             <div class="column-input">
-                <label>📝 Левый столбец:</label>
-                <input type="text" id="left-option" placeholder="Название опции 1">
+                <label> Левый круг:</label>
+                <input type="text" id="left-option" placeholder="Название">
             </div>
 
             <div class="column-input">
-                <label>📝 Правый столбец:</label>
-                <input type="text" id="right-option" placeholder="Название опции 2">
+                <label> Правый круг:</label>
+                <input type="text" id="right-option" placeholder="Название">
             </div>
         </div>
 
         <div class="form-group">
-            <label> Пароль администратора:</label>
+            <label>🔑 Пароль администратора:</label>
             <input type="password" id="admin-password" placeholder="Введите пароль">
         </div>
 
@@ -42,15 +44,10 @@
             </small>
         </div>
 
-        <button class="save-btn" onclick="saveSettings()">💾 Сохранить локально</button>
-        <button class="auto-save-btn" onclick="saveAndPushToGitHub()"> Загрузить на GitHub</button>
-        <button class="reset-btn" onclick="resetVotes()"> Сбросить голоса</button>
+        <button class="auto-save-btn" onclick="addDay()">➕ Добавить день</button>
+        <button class="reset-btn" onclick="finishDay()">🏁 Завершить день</button>
+        <button class="save-btn" onclick="uploadToGitHub()"> Загрузить на GitHub</button>
         
-        <div class="export-section">
-            <h3>📤 Или вручную:</h3>
-            <button onclick="exportData()">Скачать data.json</button>
-        </div>
-
         <div id="status" class="status-message"></div>
     </div>
 
