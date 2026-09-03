@@ -6,48 +6,47 @@ const FILE_PATH = 'data.json';
 let tournamentData = { days: [] };
 
 window.onload = function() {
-    if (localStorage.getItem('tournamentData')) {
-        tournamentData = JSON.parse(localStorage.getItem('tournamentData'));
-    }
-    
+    // НЕ загружаем старые данные — начинаем с чистого листа
     if (localStorage.getItem('githubToken')) {
         document.getElementById('github-token').value = localStorage.getItem('githubToken');
     }
     
-    const maxDay = tournamentData.days.length > 0 
-        ? Math.max(...tournamentData.days.map(d => d.day)) 
-        : 0;
-    document.getElementById('day-number').value = maxDay + 1;
+    document.getElementById('day-number').value = '1';
     
-    updateJSONDisplay();
-    console.log('Админка загружена! Дней:', tournamentData.days.length);
-    
-    // Автоматическое обновление JSON при изменении полей
-    document.getElementById('day-number').addEventListener('input', updateJSONDisplay);
-    document.getElementById('left-option').addEventListener('input', updateJSONDisplay);
-    document.getElementById('right-option').addEventListener('input', updateJSONDisplay);
+    renderDaysList();
+    console.log('Админка загружена! Начинаем с чистого листа.');
 };
 
-function updateJSONDisplay() {
-    const jsonDisplay = document.getElementById('json-display');
-    if (jsonDisplay) {
-        jsonDisplay.textContent = JSON.stringify(tournamentData, null, 2);
+function renderDaysList() {
+    const daysList = document.getElementById('days-list');
+    
+    if (tournamentData.days.length === 0) {
+        daysList.innerHTML = '<div class="empty-message">Пока нет добавленных дней.<br>Добавь первый день!</div>';
+        return;
     }
-}
-
-function copyJSON() {
-    const jsonText = JSON.stringify(tournamentData, null, 2);
-    navigator.clipboard.writeText(jsonText).then(() => {
-        const btn = document.querySelector('.copy-btn');
-        const originalText = btn.textContent;
-        btn.textContent = '✅ Скопировано!';
-        setTimeout(() => {
-            btn.textContent = originalText;
-        }, 2000);
-    }).catch(err => {
-        console.error('Ошибка копирования:', err);
-        alert('❌ Не удалось скопировать. Выдели текст вручную.');
+    
+    // Сортируем дни по номеру
+    const sortedDays = [...tournamentData.days].sort((a, b) => a.day - b.day);
+    
+    let html = '';
+    sortedDays.forEach(day => {
+        const statusClass = day.status === 'finished' ? 'finished' : 'active';
+        const statusText = day.status === 'finished' ? '🏁 Завершён' : '🔥 Активен';
+        const winnerText = day.winner ? (day.winner === 'left' ? '🏆 ' + day.leftOption : day.winner === 'right' ? '🏆 ' + day.rightOption : '🤝 Ничья') : '';
+        
+        html += `
+            <div class="day-item">
+                <h3>День ${day.day}</h3>
+                <p><strong>Левый:</strong> ${day.leftOption}</p>
+                <p><strong>Правый:</strong> ${day.rightOption}</p>
+                <p><strong>Голоса:</strong> ${day.votes1} : ${day.votes2}</p>
+                ${winnerText ? `<p><strong>Победитель:</strong> ${winnerText}</p>` : ''}
+                <span class="status ${statusClass}">${statusText}</span>
+            </div>
+        `;
     });
+    
+    daysList.innerHTML = html;
 }
 
 function addDay() {
@@ -63,13 +62,16 @@ function addDay() {
     const rightOption = document.getElementById('right-option').value.trim();
     
     if (!dayNumber || !leftOption || !rightOption) {
-        alert('️ Заполни все поля!');
+        alert('⚠️ Заполни все поля!');
         return;
     }
     
     const existingDay = tournamentData.days.find(d => d.day === dayNumber);
     
     if (existingDay) {
+        if (!confirm('День ' + dayNumber + ' уже существует. Обновить его?')) {
+            return;
+        }
         existingDay.leftOption = leftOption;
         existingDay.rightOption = rightOption;
         existingDay.status = 'active';
@@ -91,7 +93,7 @@ function addDay() {
     }
     
     localStorage.setItem('tournamentData', JSON.stringify(tournamentData));
-    updateJSONDisplay();
+    renderDaysList();
     
     document.getElementById('left-option').value = '';
     document.getElementById('right-option').value = '';
@@ -125,15 +127,54 @@ function finishDay() {
     day.status = 'finished';
     
     localStorage.setItem('tournamentData', JSON.stringify(tournamentData));
-    updateJSONDisplay();
+    renderDaysList();
     alert('🏁 День ' + dayNumber + ' завершён! Победитель: ' + (day.winner === 'draw' ? 'Ничья' : day.winner === 'left' ? day.leftOption : day.rightOption));
+}
+
+function clearAllDays() {
+    if (tournamentData.days.length === 0) {
+        alert('Нет дней для очистки!');
+        return;
+    }
+    
+    if (confirm('⚠️ Удалить ВСЕ дни? Это действие нельзя отменить!')) {
+        tournamentData.days = [];
+        localStorage.setItem('tournamentData', JSON.stringify(tournamentData));
+        renderDaysList();
+        alert('🗑️ Все дни удалены!');
+    }
+}
+
+function copyJSON() {
+    if (tournamentData.days.length === 0) {
+        alert('⚠️ Сначала добавь хотя бы один день!');
+        return;
+    }
+    
+    const jsonText = JSON.stringify(tournamentData, null, 2);
+    navigator.clipboard.writeText(jsonText).then(() => {
+        const btn = document.querySelector('.copy-btn');
+        const originalText = btn.textContent;
+        btn.textContent = '✅ Скопировано!';
+        setTimeout(() => {
+            btn.textContent = originalText;
+        }, 2000);
+    }).catch(err => {
+        console.error('Ошибка копирования:', err);
+        alert('❌ Не удалось скопировать.');
+    });
 }
 
 async function uploadToGitHub() {
     const token = document.getElementById('github-token').value.trim();
     
     if (!token) {
-        alert('⚠️ Введи GitHub token!');
+        alert('️ Введи GitHub token!');
+        return;
+    }
+    
+    if (tournamentData.days.length === 0) {
+        alert('️ Сначала добавь хотя бы один день!');
         return;
     }
     
@@ -168,7 +209,7 @@ async function uploadToGitHub() {
         const content = btoa(unescape(encodeURIComponent(JSON.stringify(tournamentData, null, 2))));
         
         const putData = {
-            message: '📊 Обновление от ' + new Date().toLocaleString('ru-RU'),
+            message: ' Обновление от ' + new Date().toLocaleString('ru-RU'),
             content: content,
             branch: BRANCH_NAME
         };
